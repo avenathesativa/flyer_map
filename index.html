@@ -1,466 +1,751 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunday Toffee — Flyer Map</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:wght@700&display=swap');
+    <meta charset="utf-8">
+    <title>Sunday Toffee - Flyer Map</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', serif; }
+        #map { width: 100%; height: calc(100vh - 60px); }
+        .header {
+            background: #333; color: white; padding: 12px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            height: 60px;
+        }
+        .header h1 { font-size: 18px; font-style: italic; font-weight: normal; }
+        .legend { display: flex; gap: 18px; font-size: 13px; align-items: center; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .leaflet-popup-content { font-family: 'Georgia', serif; font-size: 13px; }
+        .popup-num { font-weight: bold; font-size: 14px; }
+        .popup-area { color: #888; font-size: 11px; }
+        .popup-loc { margin-top: 2px; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: #faf8f5;
-    color: #2a2520;
-  }
-
-  .header {
-    background: #2a2520;
-    color: #faf8f5;
-    padding: 20px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-  }
-
-  .header h1 {
-    font-family: 'Fraunces', serif;
-    font-size: 24px;
-    letter-spacing: -0.5px;
-  }
-
-  .header p {
-    font-size: 13px;
-    opacity: 0.7;
-  }
-
-  .controls {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .filter-btn {
-    border: none;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    letter-spacing: 0.3px;
-  }
-
-  .filter-btn.active { transform: scale(1.05); }
-  .filter-btn:not(.active) { opacity: 0.4; filter: grayscale(0.5); }
-
-  .filter-btn[data-area="all"] { background: #2a2520; color: #faf8f5; border: 2px solid #faf8f5; }
-  .filter-btn[data-area="Castro"] { background: #E74C3C; color: #fff; }
-  .filter-btn[data-area="Noe Valley"] { background: #3498DB; color: #fff; }
-  .filter-btn[data-area="Hayes Valley"] { background: #27AE60; color: #fff; }
-  .filter-btn[data-area="Valencia"] { background: #F39C12; color: #fff; }
-  .filter-btn[data-area="Market St"] { background: #9B59B6; color: #fff; }
-
-  #map {
-    width: 100%;
-    height: calc(100vh - 72px);
-  }
-
-  .leaflet-div-icon {
-    background: none !important;
-    border: none !important;
-  }
-
-  .flyer-marker {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    color: #fff;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 9px;
-    font-weight: 700;
-    line-height: 1;
-    border: 2px solid #fff;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-    text-align: center;
-    cursor: pointer;
-  }
-
-  .flyer-marker.castro { background: #E74C3C; }
-  .flyer-marker.noe-valley { background: #3498DB; }
-  .flyer-marker.hayes-valley { background: #27AE60; }
-  .flyer-marker.valencia { background: #F39C12; }
-  .flyer-marker.market-st { background: #9B59B6; }
-
-  .leaflet-popup-content-wrapper {
-    border-radius: 10px;
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  .leaflet-popup-content {
-    margin: 10px 14px;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .popup-flyer {
-    font-weight: 700;
-    font-size: 15px;
-    margin-bottom: 2px;
-  }
-
-  .popup-area {
-    display: inline-block;
-    padding: 1px 8px;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-
-  .legend {
-    background: #fff;
-    padding: 12px 16px;
-    border-radius: 10px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-    font-size: 12px;
-    line-height: 2;
-  }
-
-  .legend-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .legend-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  @media print {
-    .header { padding: 10px 20px; }
-    .controls { display: none; }
-    #map { height: calc(100vh - 52px); }
-    .legend { display: block !important; }
-  }
-</style>
+        @media print {
+            .header { background: white !important; color: black !important;
+                       border-bottom: 1px solid #ccc; }
+            .legend-dot { border-color: rgba(0,0,0,0.3) !important; }
+            .leaflet-control-zoom { display: none !important; }
+            .leaflet-control-attribution { display: none !important; }
+        }
+    </style>
 </head>
 <body>
-
-<div class="header">
-  <div>
-    <h1>Sunday Toffee — Flyer Map</h1>
-    <p>200 flyer locations across SF · March 2026 campaign</p>
-  </div>
-  <div class="controls">
-    <button class="filter-btn active" data-area="all" onclick="filterArea('all')">All (160)</button>
-    <button class="filter-btn active" data-area="Castro" onclick="filterArea('Castro')">Castro (40)</button>
-    <button class="filter-btn active" data-area="Noe Valley" onclick="filterArea('Noe Valley')">Noe Valley (40)</button>
-    <button class="filter-btn active" data-area="Hayes Valley" onclick="filterArea('Hayes Valley')">Hayes Valley (40)</button>
-    <button class="filter-btn active" data-area="Valencia" onclick="filterArea('Valencia')">Valencia (10)</button>
-    <button class="filter-btn active" data-area="Market St" onclick="filterArea('Market St')">Market St (30)</button>
-  </div>
-</div>
-
-<div id="map"></div>
-
-<script>
-const COLORS = {
-  "Castro": "#E74C3C",
-  "Noe Valley": "#3498DB",
-  "Hayes Valley": "#27AE60",
-  "Valencia": "#F39C12",
-  "Market St": "#9B59B6"
-};
-
-const CSS_CLASS = {
-  "Castro": "castro",
-  "Noe Valley": "noe-valley",
-  "Hayes Valley": "hayes-valley",
-  "Valencia": "valencia",
-  "Market St": "market-st"
-};
-
-const flyers = [
-  // CASTRO (40)
-  {n:"001",loc:"Castro & 18th",area:"Castro",lat:37.7609,lng:-122.435},
-  {n:"002",loc:"Castro & 19th",area:"Castro",lat:37.7593,lng:-122.4349},
-  {n:"003",loc:"Castro & Market",area:"Castro",lat:37.7627,lng:-122.4352},
-  {n:"004",loc:"Castro & 16th",area:"Castro",lat:37.7641,lng:-122.4354},
-  {n:"005",loc:"Castro & 17th",area:"Castro",lat:37.7625,lng:-122.4352},
-  {n:"006",loc:"Castro & 20th",area:"Castro",lat:37.7577,lng:-122.4347},
-  {n:"007",loc:"Castro & Duboce",area:"Castro",lat:37.7691,lng:-122.4358},
-  {n:"008",loc:"Castro & 15th",area:"Castro",lat:37.7657,lng:-122.4355},
-  {n:"009",loc:"18th & Collingwood",area:"Castro",lat:37.7608,lng:-122.4361},
-  {n:"010",loc:"18th & Diamond",area:"Castro",lat:37.7608,lng:-122.4372},
-  {n:"011",loc:"18th & Eureka",area:"Castro",lat:37.7607,lng:-122.4383},
-  {n:"012",loc:"18th & Hartford",area:"Castro",lat:37.761,lng:-122.4339},
-  {n:"013",loc:"18th & Sanchez",area:"Castro",lat:37.7612,lng:-122.4306},
-  {n:"014",loc:"18th & Noe",area:"Castro",lat:37.761,lng:-122.4328},
-  {n:"015",loc:"19th & Collingwood",area:"Castro",lat:37.7592,lng:-122.436},
-  {n:"016",loc:"19th & Diamond",area:"Castro",lat:37.7592,lng:-122.4371},
-  {n:"017",loc:"19th & Sanchez",area:"Castro",lat:37.7596,lng:-122.4304},
-  {n:"018",loc:"19th & Eureka",area:"Castro",lat:37.7591,lng:-122.4381},
-  {n:"019",loc:"19th & Noe",area:"Castro",lat:37.7594,lng:-122.4327},
-  {n:"020",loc:"16th & Collingwood",area:"Castro",lat:37.764,lng:-122.4365},
-  {n:"021",loc:"16th & Diamond",area:"Castro",lat:37.7639,lng:-122.4375},
-  {n:"022",loc:"20th & Sanchez",area:"Castro",lat:37.758,lng:-122.4303},
-  {n:"023",loc:"16th & Noe",area:"Castro",lat:37.7642,lng:-122.4331},
-  {n:"024",loc:"16th & Sanchez",area:"Castro",lat:37.7644,lng:-122.4309},
-  {n:"025",loc:"17th & Noe",area:"Castro",lat:37.7626,lng:-122.433},
-  {n:"026",loc:"17th & Sanchez",area:"Castro",lat:37.7628,lng:-122.4308},
-  {n:"027",loc:"17th & Diamond",area:"Castro",lat:37.7624,lng:-122.4374},
-  {n:"028",loc:"17th & Eureka",area:"Castro",lat:37.7622,lng:-122.4384},
-  {n:"029",loc:"20th & Collingwood",area:"Castro",lat:37.7576,lng:-122.4358},
-  {n:"030",loc:"20th & Diamond",area:"Castro",lat:37.7576,lng:-122.4369},
-  {n:"031",loc:"20th & Eureka",area:"Castro",lat:37.7575,lng:-122.438},
-  {n:"032",loc:"20th & Noe",area:"Castro",lat:37.7578,lng:-122.4325},
-  {n:"033",loc:"Douglass & 19th",area:"Castro",lat:37.759,lng:-122.4392},
-  {n:"034",loc:"Douglass & 20th",area:"Castro",lat:37.7574,lng:-122.439},
-  {n:"035",loc:"Ord & 18th",area:"Castro",lat:37.7606,lng:-122.44},
-  {n:"036",loc:"Church & Market",area:"Castro",lat:37.7674,lng:-122.429},
-  {n:"037",loc:"Church & 16th",area:"Castro",lat:37.7645,lng:-122.4287},
-  {n:"038",loc:"Noe & Beaver",area:"Castro",lat:37.7651,lng:-122.4332},
-  {n:"039",loc:"Hartford & 19th",area:"Castro",lat:37.7594,lng:-122.4338},
-  {n:"040",loc:"Eureka & 17th",area:"Castro",lat:37.7622,lng:-122.4384},
-
-  // NOE VALLEY (40)
-  {n:"041",loc:"24th & Church",area:"Noe Valley",lat:37.7517,lng:-122.4275},
-  {n:"042",loc:"24th & Noe",area:"Noe Valley",lat:37.7514,lng:-122.4319},
-  {n:"043",loc:"24th & Sanchez",area:"Noe Valley",lat:37.7516,lng:-122.4297},
-  {n:"044",loc:"24th & Castro",area:"Noe Valley",lat:37.7513,lng:-122.4341},
-  {n:"045",loc:"24th & Diamond",area:"Noe Valley",lat:37.7512,lng:-122.4363},
-  {n:"046",loc:"24th & Vicksburg",area:"Noe Valley",lat:37.7516,lng:-122.4286},
-  {n:"047",loc:"24th & Douglass",area:"Noe Valley",lat:37.751,lng:-122.4385},
-  {n:"048",loc:"24th & Chattanooga",area:"Noe Valley",lat:37.7518,lng:-122.4264},
-  {n:"049",loc:"24th & Hoffman",area:"Noe Valley",lat:37.7509,lng:-122.4406},
-  {n:"050",loc:"Church & 25th",area:"Noe Valley",lat:37.7501,lng:-122.4273},
-  {n:"051",loc:"Church & 26th",area:"Noe Valley",lat:37.7485,lng:-122.4272},
-  {n:"052",loc:"Church & 27th",area:"Noe Valley",lat:37.7469,lng:-122.427},
-  {n:"053",loc:"Church & Jersey",area:"Noe Valley",lat:37.7509,lng:-122.4274},
-  {n:"054",loc:"Church & Clipper",area:"Noe Valley",lat:37.7493,lng:-122.4272},
-  {n:"055",loc:"Church & 28th",area:"Noe Valley",lat:37.7453,lng:-122.4269},
-  {n:"056",loc:"Church & 29th",area:"Noe Valley",lat:37.7437,lng:-122.4267},
-  {n:"057",loc:"Noe & 25th",area:"Noe Valley",lat:37.7498,lng:-122.4317},
-  {n:"058",loc:"Noe & 26th",area:"Noe Valley",lat:37.7482,lng:-122.4316},
-  {n:"059",loc:"Noe & Jersey",area:"Noe Valley",lat:37.7506,lng:-122.4318},
-  {n:"060",loc:"Noe & Clipper",area:"Noe Valley",lat:37.749,lng:-122.4317},
-  {n:"061",loc:"Noe & 27th",area:"Noe Valley",lat:37.7466,lng:-122.4314},
-  {n:"062",loc:"Noe & 28th",area:"Noe Valley",lat:37.745,lng:-122.4313},
-  {n:"063",loc:"Sanchez & 25th",area:"Noe Valley",lat:37.75,lng:-122.4295},
-  {n:"064",loc:"Sanchez & 26th",area:"Noe Valley",lat:37.7484,lng:-122.4294},
-  {n:"065",loc:"Sanchez & Jersey",area:"Noe Valley",lat:37.7508,lng:-122.4296},
-  {n:"066",loc:"Sanchez & Clipper",area:"Noe Valley",lat:37.7492,lng:-122.4295},
-  {n:"067",loc:"Sanchez & 27th",area:"Noe Valley",lat:37.7468,lng:-122.4292},
-  {n:"068",loc:"Sanchez & 28th",area:"Noe Valley",lat:37.7452,lng:-122.4291},
-  {n:"069",loc:"Castro & 25th",area:"Noe Valley",lat:37.7497,lng:-122.434},
-  {n:"070",loc:"Castro & 26th",area:"Noe Valley",lat:37.7481,lng:-122.4338},
-  {n:"071",loc:"Castro & Jersey",area:"Noe Valley",lat:37.7505,lng:-122.434},
-  {n:"072",loc:"Castro & Clipper",area:"Noe Valley",lat:37.7489,lng:-122.4339},
-  {n:"073",loc:"Diamond & 25th",area:"Noe Valley",lat:37.7496,lng:-122.4362},
-  {n:"074",loc:"Diamond & 26th",area:"Noe Valley",lat:37.748,lng:-122.436},
-  {n:"075",loc:"Jersey & Guerrero",area:"Noe Valley",lat:37.7512,lng:-122.4228},
-  {n:"076",loc:"Jersey & Dolores",area:"Noe Valley",lat:37.751,lng:-122.425},
-  {n:"077",loc:"29th & Noe",area:"Noe Valley",lat:37.7434,lng:-122.4311},
-  {n:"078",loc:"29th & Sanchez",area:"Noe Valley",lat:37.7436,lng:-122.4289},
-  {n:"079",loc:"Cesar Chavez & Church",area:"Noe Valley",lat:37.7477,lng:-122.4271},
-  {n:"080",loc:"Cesar Chavez & Noe",area:"Noe Valley",lat:37.7474,lng:-122.4315},
-
-  // HAYES VALLEY (40)
-  {n:"081",loc:"Hayes & Octavia",area:"Hayes Valley",lat:37.7767,lng:-122.4247},
-  {n:"082",loc:"Hayes & Laguna",area:"Hayes Valley",lat:37.7764,lng:-122.4264},
-  {n:"083",loc:"Hayes & Gough",area:"Hayes Valley",lat:37.777,lng:-122.4229},
-  {n:"084",loc:"Hayes & Franklin",area:"Hayes Valley",lat:37.7773,lng:-122.4212},
-  {n:"085",loc:"Hayes & Buchanan",area:"Hayes Valley",lat:37.7761,lng:-122.4281},
-  {n:"086",loc:"Hayes & Webster",area:"Hayes Valley",lat:37.7758,lng:-122.4299},
-  {n:"087",loc:"Hayes & Van Ness",area:"Hayes Valley",lat:37.7776,lng:-122.4195},
-  {n:"088",loc:"Hayes & Polk",area:"Hayes Valley",lat:37.7779,lng:-122.4178},
-  {n:"089",loc:"Octavia & Fell",area:"Hayes Valley",lat:37.7756,lng:-122.4239},
-  {n:"090",loc:"Octavia & Oak",area:"Hayes Valley",lat:37.7749,lng:-122.4233},
-  {n:"091",loc:"Octavia & Page",area:"Hayes Valley",lat:37.7741,lng:-122.4244},
-  {n:"092",loc:"Octavia & Grove",area:"Hayes Valley",lat:37.7763,lng:-122.425},
-  {n:"093",loc:"Gough & Fell",area:"Hayes Valley",lat:37.7755,lng:-122.4222},
-  {n:"094",loc:"Gough & Oak",area:"Hayes Valley",lat:37.7748,lng:-122.4216},
-  {n:"095",loc:"Gough & Page",area:"Hayes Valley",lat:37.774,lng:-122.4227},
-  {n:"096",loc:"Gough & Grove",area:"Hayes Valley",lat:37.7762,lng:-122.4233},
-  {n:"097",loc:"Laguna & Fell",area:"Hayes Valley",lat:37.7753,lng:-122.4256},
-  {n:"098",loc:"Laguna & Grove",area:"Hayes Valley",lat:37.776,lng:-122.4267},
-  {n:"099",loc:"Laguna & Page",area:"Hayes Valley",lat:37.7738,lng:-122.4261},
-  {n:"100",loc:"Laguna & Oak",area:"Hayes Valley",lat:37.7746,lng:-122.4249},
-  {n:"101",loc:"Linden & Gough",area:"Hayes Valley",lat:37.7774,lng:-122.4233},
-  {n:"102",loc:"Linden & Octavia",area:"Hayes Valley",lat:37.7771,lng:-122.425},
-  {n:"103",loc:"Ivy & Gough",area:"Hayes Valley",lat:37.7776,lng:-122.4235},
-  {n:"104",loc:"Ivy & Octavia",area:"Hayes Valley",lat:37.7773,lng:-122.4252},
-  {n:"105",loc:"Patricia's Green",area:"Hayes Valley",lat:37.7768,lng:-122.4255},
-  {n:"106",loc:"Buchanan & Fell",area:"Hayes Valley",lat:37.7751,lng:-122.4273},
-  {n:"107",loc:"Buchanan & Grove",area:"Hayes Valley",lat:37.7758,lng:-122.4283},
-  {n:"108",loc:"Buchanan & Page",area:"Hayes Valley",lat:37.7736,lng:-122.4278},
-  {n:"109",loc:"Webster & Fell",area:"Hayes Valley",lat:37.7749,lng:-122.429},
-  {n:"110",loc:"Webster & Grove",area:"Hayes Valley",lat:37.7756,lng:-122.43},
-  {n:"111",loc:"Franklin & Fell",area:"Hayes Valley",lat:37.7757,lng:-122.4205},
-  {n:"112",loc:"Franklin & Oak",area:"Hayes Valley",lat:37.775,lng:-122.4199},
-  {n:"113",loc:"Fulton & Laguna",area:"Hayes Valley",lat:37.7792,lng:-122.427},
-  {n:"114",loc:"Fulton & Gough",area:"Hayes Valley",lat:37.7795,lng:-122.4253},
-  {n:"115",loc:"Fulton & Octavia",area:"Hayes Valley",lat:37.7789,lng:-122.4287},
-  {n:"116",loc:"Fulton & Buchanan",area:"Hayes Valley",lat:37.7786,lng:-122.4304},
-  {n:"117",loc:"Grove & Laguna",area:"Hayes Valley",lat:37.776,lng:-122.4267},
-  {n:"118",loc:"Grove & Buchanan",area:"Hayes Valley",lat:37.7758,lng:-122.4283},
-  {n:"119",loc:"Page & Webster",area:"Hayes Valley",lat:37.7734,lng:-122.4295},
-  {n:"120",loc:"Oak & Buchanan",area:"Hayes Valley",lat:37.7744,lng:-122.4266},
-
-  // VALENCIA (10)
-  {n:"121",loc:"Valencia & 16th",area:"Valencia",lat:37.7649,lng:-122.4219},
-  {n:"122",loc:"Valencia & 17th",area:"Valencia",lat:37.7634,lng:-122.4213},
-  {n:"123",loc:"Valencia & 18th",area:"Valencia",lat:37.7618,lng:-122.4207},
-  {n:"124",loc:"Valencia & 19th",area:"Valencia",lat:37.7602,lng:-122.4201},
-  {n:"125",loc:"Valencia & 20th",area:"Valencia",lat:37.7586,lng:-122.4195},
-  {n:"126",loc:"Valencia & 21st",area:"Valencia",lat:37.757,lng:-122.4189},
-  {n:"127",loc:"Valencia & 22nd",area:"Valencia",lat:37.7555,lng:-122.4183},
-  {n:"128",loc:"Valencia & 23rd",area:"Valencia",lat:37.7539,lng:-122.4177},
-  {n:"129",loc:"Valencia & 24th",area:"Valencia",lat:37.7523,lng:-122.4171},
-  {n:"130",loc:"Valencia & 25th",area:"Valencia",lat:37.7507,lng:-122.4165},
-
-  // MARKET ST (30)
-  {n:"131",loc:"Market & Castro (N)",area:"Market St",lat:37.7628,lng:-122.4353},
-  {n:"132",loc:"Market & Castro (S)",area:"Market St",lat:37.7626,lng:-122.4351},
-  {n:"133",loc:"Market & Noe (N)",area:"Market St",lat:37.7639,lng:-122.4335},
-  {n:"134",loc:"Market & Noe (S)",area:"Market St",lat:37.7637,lng:-122.4333},
-  {n:"135",loc:"Market & 17th (N)",area:"Market St",lat:37.7645,lng:-122.4328},
-  {n:"136",loc:"Market & 17th (S)",area:"Market St",lat:37.7643,lng:-122.4326},
-  {n:"137",loc:"Market & Sanchez (N)",area:"Market St",lat:37.7653,lng:-122.4316},
-  {n:"138",loc:"Market & Sanchez (S)",area:"Market St",lat:37.7651,lng:-122.4314},
-  {n:"139",loc:"Market & Eureka (N)",area:"Market St",lat:37.7647,lng:-122.4323},
-  {n:"140",loc:"Market & Eureka (S)",area:"Market St",lat:37.7645,lng:-122.4321},
-  {n:"141",loc:"Market & Church (N)",area:"Market St",lat:37.7675,lng:-122.4291},
-  {n:"142",loc:"Market & Church (S)",area:"Market St",lat:37.7673,lng:-122.4289},
-  {n:"143",loc:"Market & 14th (N)",area:"Market St",lat:37.7679,lng:-122.4286},
-  {n:"144",loc:"Market & 14th (S)",area:"Market St",lat:37.7677,lng:-122.4284},
-  {n:"145",loc:"Market & Dolores (N)",area:"Market St",lat:37.7685,lng:-122.4278},
-  {n:"146",loc:"Market & Dolores (S)",area:"Market St",lat:37.7683,lng:-122.4276},
-  {n:"147",loc:"Market btwn Castro & Noe (N)",area:"Market St",lat:37.7634,lng:-122.4344},
-  {n:"148",loc:"Market btwn Castro & Noe (S)",area:"Market St",lat:37.7632,lng:-122.4342},
-  {n:"149",loc:"Market btwn Noe & Sanchez (N)",area:"Market St",lat:37.7646,lng:-122.4326},
-  {n:"150",loc:"Market btwn Noe & Sanchez (S)",area:"Market St",lat:37.7644,lng:-122.4324},
-  {n:"151",loc:"Market btwn Sanchez & Church (N)",area:"Market St",lat:37.7664,lng:-122.4304},
-  {n:"152",loc:"Market btwn Sanchez & Church (S)",area:"Market St",lat:37.7662,lng:-122.4302},
-  {n:"153",loc:"Market btwn Church & Dolores (N)",area:"Market St",lat:37.768,lng:-122.4285},
-  {n:"154",loc:"Market btwn Church & Dolores (S)",area:"Market St",lat:37.7678,lng:-122.4283},
-  {n:"155",loc:"Market btwn Eureka & Sanchez (N)",area:"Market St",lat:37.765,lng:-122.432},
-  {n:"156",loc:"Market btwn Eureka & Sanchez (S)",area:"Market St",lat:37.7648,lng:-122.4318},
-  {n:"157",loc:"Market btwn 17th & Noe (N)",area:"Market St",lat:37.7642,lng:-122.4332},
-  {n:"158",loc:"Market btwn 17th & Noe (S)",area:"Market St",lat:37.764,lng:-122.433},
-  {n:"159",loc:"Market btwn 14th & Dolores (N)",area:"Market St",lat:37.7682,lng:-122.4282},
-  {n:"160",loc:"Market btwn 14th & Dolores (S)",area:"Market St",lat:37.768,lng:-122.428}
+    <div class="header">
+        <h1>sunday toffee &mdash; flyer locations (94 flyers)</h1>
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#f39c12;"></div>Castro (14)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#3498db;"></div>Noe Valley (15)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#2ecc71;"></div>Hayes Valley (14)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e67e22;"></div>Valencia (5)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e74c3c;"></div>Market St (6)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#9b59b6;"></div>Bulletin Boards (40)</div>
+        </div>
+    </div>
+    <div id="map"></div>
+    <script>
+        const pins = [
+  {
+    "num": 1,
+    "area": "Castro",
+    "location": "Castro & 18th",
+    "lat": 37.760747,
+    "lng": -122.435071
+  },
+  {
+    "num": 3,
+    "area": "Castro",
+    "location": "Castro & Market",
+    "lat": 37.764623,
+    "lng": -122.435451
+  },
+  {
+    "num": 5,
+    "area": "Castro",
+    "location": "Castro & 17th",
+    "lat": 37.762329,
+    "lng": -122.435226
+  },
+  {
+    "num": 6,
+    "area": "Castro",
+    "location": "Castro & 20th",
+    "lat": 37.757583,
+    "lng": -122.434761
+  },
+  {
+    "num": 7,
+    "area": "Castro",
+    "location": "Castro & Duboce",
+    "lat": 37.766284,
+    "lng": -122.435613
+  },
+  {
+    "num": 10,
+    "area": "Castro",
+    "location": "18th & Diamond",
+    "lat": 37.760529,
+    "lng": -122.437844
+  },
+  {
+    "num": 13,
+    "area": "Castro",
+    "location": "18th & Sanchez",
+    "lat": 37.761105,
+    "lng": -122.430525
+  },
+  {
+    "num": 16,
+    "area": "Castro",
+    "location": "19th & Diamond",
+    "lat": 37.758947,
+    "lng": -122.437689
+  },
+  {
+    "num": 19,
+    "area": "Castro",
+    "location": "19th & Noe",
+    "lat": 37.759344,
+    "lng": -122.432643
+  },
+  {
+    "num": 22,
+    "area": "Castro",
+    "location": "20th & Sanchez",
+    "lat": 37.757941,
+    "lng": -122.430215
+  },
+  {
+    "num": 23,
+    "area": "Castro",
+    "location": "16th & Noe",
+    "lat": 37.76409,
+    "lng": -122.433108
+  },
+  {
+    "num": 27,
+    "area": "Castro",
+    "location": "17th & Diamond",
+    "lat": 37.762111,
+    "lng": -122.437999
+  },
+  {
+    "num": 30,
+    "area": "Castro",
+    "location": "20th & Diamond",
+    "lat": 37.757365,
+    "lng": -122.437534
+  },
+  {
+    "num": 36,
+    "area": "Castro",
+    "location": "Church & Market",
+    "lat": 37.767454,
+    "lng": -122.428856
+  },
+  {
+    "num": 41,
+    "area": "Noe Valley",
+    "location": "24th & Church",
+    "lat": 37.751792,
+    "lng": -122.427322
+  },
+  {
+    "num": 42,
+    "area": "Noe Valley",
+    "location": "24th & Noe",
+    "lat": 37.751434,
+    "lng": -122.431868
+  },
+  {
+    "num": 44,
+    "area": "Noe Valley",
+    "location": "24th & Castro",
+    "lat": 37.751255,
+    "lng": -122.434141
+  },
+  {
+    "num": 45,
+    "area": "Noe Valley",
+    "location": "24th & Diamond",
+    "lat": 37.751037,
+    "lng": -122.436914
+  },
+  {
+    "num": 47,
+    "area": "Noe Valley",
+    "location": "24th & Douglass",
+    "lat": 37.75079,
+    "lng": -122.440051
+  },
+  {
+    "num": 50,
+    "area": "Noe Valley",
+    "location": "Church & 25th",
+    "lat": 37.75021,
+    "lng": -122.427167
+  },
+  {
+    "num": 53,
+    "area": "Noe Valley",
+    "location": "Church & Jersey",
+    "lat": 37.74934,
+    "lng": -122.427082
+  },
+  {
+    "num": 57,
+    "area": "Noe Valley",
+    "location": "Noe & 25th",
+    "lat": 37.749852,
+    "lng": -122.431713
+  },
+  {
+    "num": 59,
+    "area": "Noe Valley",
+    "location": "Noe & Jersey",
+    "lat": 37.748982,
+    "lng": -122.431628
+  },
+  {
+    "num": 63,
+    "area": "Noe Valley",
+    "location": "Sanchez & 25th",
+    "lat": 37.750031,
+    "lng": -122.42944
+  },
+  {
+    "num": 66,
+    "area": "Noe Valley",
+    "location": "Sanchez & Clipper",
+    "lat": 37.747974,
+    "lng": -122.429238
+  },
+  {
+    "num": 69,
+    "area": "Noe Valley",
+    "location": "Castro & 25th",
+    "lat": 37.749673,
+    "lng": -122.433986
+  },
+  {
+    "num": 75,
+    "area": "Noe Valley",
+    "location": "Jersey & Guerrero",
+    "lat": 37.749698,
+    "lng": -122.422536
+  },
+  {
+    "num": 77,
+    "area": "Noe Valley",
+    "location": "29th & Noe",
+    "lat": 37.742575,
+    "lng": -122.431
+  },
+  {
+    "num": 79,
+    "area": "Noe Valley",
+    "location": "Cesar Chavez & Church",
+    "lat": 37.741509,
+    "lng": -122.426315
+  },
+  {
+    "num": 81,
+    "area": "Hayes Valley",
+    "location": "Hayes & Octavia",
+    "lat": 37.776809,
+    "lng": -122.424436
+  },
+  {
+    "num": 82,
+    "area": "Hayes Valley",
+    "location": "Hayes & Laguna",
+    "lat": 37.776693,
+    "lng": -122.425914
+  },
+  {
+    "num": 83,
+    "area": "Hayes Valley",
+    "location": "Hayes & Gough",
+    "lat": 37.776897,
+    "lng": -122.423322
+  },
+  {
+    "num": 85,
+    "area": "Hayes Valley",
+    "location": "Hayes & Buchanan",
+    "lat": 37.776575,
+    "lng": -122.427414
+  },
+  {
+    "num": 87,
+    "area": "Hayes Valley",
+    "location": "Hayes & Van Ness",
+    "lat": 37.777144,
+    "lng": -122.420186
+  },
+  {
+    "num": 89,
+    "area": "Hayes Valley",
+    "location": "Octavia & Fell",
+    "lat": 37.776572,
+    "lng": -122.424413
+  },
+  {
+    "num": 92,
+    "area": "Hayes Valley",
+    "location": "Octavia & Grove",
+    "lat": 37.777679,
+    "lng": -122.424521
+  },
+  {
+    "num": 93,
+    "area": "Hayes Valley",
+    "location": "Gough & Fell",
+    "lat": 37.77666,
+    "lng": -122.423299
+  },
+  {
+    "num": 96,
+    "area": "Hayes Valley",
+    "location": "Gough & Grove",
+    "lat": 37.777767,
+    "lng": -122.423408
+  },
+  {
+    "num": 105,
+    "area": "Hayes Valley",
+    "location": "Patricia's Green",
+    "lat": 37.776241,
+    "lng": -122.424426
+  },
+  {
+    "num": 106,
+    "area": "Hayes Valley",
+    "location": "Buchanan & Fell",
+    "lat": 37.776337,
+    "lng": -122.427391
+  },
+  {
+    "num": 109,
+    "area": "Hayes Valley",
+    "location": "Webster & Fell",
+    "lat": 37.776217,
+    "lng": -122.428913
+  },
+  {
+    "num": 111,
+    "area": "Hayes Valley",
+    "location": "Franklin & Fell",
+    "lat": 37.776781,
+    "lng": -122.421753
+  },
+  {
+    "num": 113,
+    "area": "Hayes Valley",
+    "location": "Fulton & Laguna",
+    "lat": 37.778512,
+    "lng": -122.426092
+  },
+  {
+    "num": 121,
+    "area": "Valencia",
+    "location": "Valencia & 16th",
+    "lat": 37.764985,
+    "lng": -122.421743
+  },
+  {
+    "num": 123,
+    "area": "Valencia",
+    "location": "Valencia & 18th",
+    "lat": 37.761821,
+    "lng": -122.421433
+  },
+  {
+    "num": 125,
+    "area": "Valencia",
+    "location": "Valencia & 20th",
+    "lat": 37.758657,
+    "lng": -122.421123
+  },
+  {
+    "num": 127,
+    "area": "Valencia",
+    "location": "Valencia & 22nd",
+    "lat": 37.755493,
+    "lng": -122.420813
+  },
+  {
+    "num": 129,
+    "area": "Valencia",
+    "location": "Valencia & 24th",
+    "lat": 37.752329,
+    "lng": -122.420503
+  },
+  {
+    "num": 131,
+    "area": "Market St",
+    "location": "Market & Castro (N side)",
+    "lat": 37.764623,
+    "lng": -122.435451
+  },
+  {
+    "num": 133,
+    "area": "Market St",
+    "location": "Market & Noe (N side)",
+    "lat": 37.765435,
+    "lng": -122.43324
+  },
+  {
+    "num": 137,
+    "area": "Market St",
+    "location": "Market & Sanchez (N side)",
+    "lat": 37.766247,
+    "lng": -122.431029
+  },
+  {
+    "num": 141,
+    "area": "Market St",
+    "location": "Market & Church (N side)",
+    "lat": 37.767454,
+    "lng": -122.428856
+  },
+  {
+    "num": 143,
+    "area": "Market St",
+    "location": "Market & 14th (N side)",
+    "lat": 37.768334,
+    "lng": -122.427797
+  },
+  {
+    "num": 145,
+    "area": "Market St",
+    "location": "Market & Dolores (N side)",
+    "lat": 37.768898,
+    "lng": -122.426707
+  },
+  {
+    "num": 161,
+    "area": "Bulletin Board",
+    "location": "Rainbow Grocery",
+    "lat": 37.7697,
+    "lng": -122.4116
+  },
+  {
+    "num": 162,
+    "area": "Bulletin Board",
+    "location": "SF Library - Main Branch",
+    "lat": 37.7792,
+    "lng": -122.4158
+  },
+  {
+    "num": 163,
+    "area": "Bulletin Board",
+    "location": "SF Library - Eureka Valley",
+    "lat": 37.7609,
+    "lng": -122.4332
+  },
+  {
+    "num": 164,
+    "area": "Bulletin Board",
+    "location": "SF Library - Noe Valley",
+    "lat": 37.7503,
+    "lng": -122.432
+  },
+  {
+    "num": 165,
+    "area": "Bulletin Board",
+    "location": "SF Library - Mission Branch",
+    "lat": 37.7581,
+    "lng": -122.4186
+  },
+  {
+    "num": 166,
+    "area": "Bulletin Board",
+    "location": "Philz Coffee - Castro",
+    "lat": 37.7612,
+    "lng": -122.4348
+  },
+  {
+    "num": 167,
+    "area": "Bulletin Board",
+    "location": "Philz Coffee - Hayes Valley",
+    "lat": 37.7764,
+    "lng": -122.4238
+  },
+  {
+    "num": 168,
+    "area": "Bulletin Board",
+    "location": "Philz Coffee - Mission",
+    "lat": 37.7514,
+    "lng": -122.4182
+  },
+  {
+    "num": 169,
+    "area": "Bulletin Board",
+    "location": "Ritual Coffee - Valencia",
+    "lat": 37.7563,
+    "lng": -122.4213
+  },
+  {
+    "num": 170,
+    "area": "Bulletin Board",
+    "location": "Sightglass Coffee - 7th St",
+    "lat": 37.7741,
+    "lng": -122.4108
+  },
+  {
+    "num": 171,
+    "area": "Bulletin Board",
+    "location": "Tartine - 18th St",
+    "lat": 37.7614,
+    "lng": -122.4243
+  },
+  {
+    "num": 172,
+    "area": "Bulletin Board",
+    "location": "Whole Foods - Noe Valley",
+    "lat": 37.7508,
+    "lng": -122.434
+  },
+  {
+    "num": 173,
+    "area": "Bulletin Board",
+    "location": "Gus's Market - 24th",
+    "lat": 37.7521,
+    "lng": -122.4131
+  },
+  {
+    "num": 174,
+    "area": "Bulletin Board",
+    "location": "Bi-Rite Market - 18th",
+    "lat": 37.761,
+    "lng": -122.4256
+  },
+  {
+    "num": 175,
+    "area": "Bulletin Board",
+    "location": "Community Thrift - Valencia",
+    "lat": 37.7538,
+    "lng": -122.4213
+  },
+  {
+    "num": 176,
+    "area": "Bulletin Board",
+    "location": "Muddy Waters Coffee - Valencia",
+    "lat": 37.757,
+    "lng": -122.4213
+  },
+  {
+    "num": 177,
+    "area": "Bulletin Board",
+    "location": "Cafe Flore - Market & Noe",
+    "lat": 37.764,
+    "lng": -122.433
+  },
+  {
+    "num": 178,
+    "area": "Bulletin Board",
+    "location": "Dog Eared Books - Valencia",
+    "lat": 37.7555,
+    "lng": -122.4213
+  },
+  {
+    "num": 179,
+    "area": "Bulletin Board",
+    "location": "Adobe Books - 24th",
+    "lat": 37.7504,
+    "lng": -122.4194
+  },
+  {
+    "num": 180,
+    "area": "Bulletin Board",
+    "location": "Alamo Square (board)",
+    "lat": 37.7764,
+    "lng": -122.4345
+  },
+  {
+    "num": 181,
+    "area": "Bulletin Board",
+    "location": "SF LGBT Center",
+    "lat": 37.7652,
+    "lng": -122.4195
+  },
+  {
+    "num": 182,
+    "area": "Bulletin Board",
+    "location": "Women's Building - 18th",
+    "lat": 37.7616,
+    "lng": -122.4215
+  },
+  {
+    "num": 183,
+    "area": "Bulletin Board",
+    "location": "Noe Valley Ministry",
+    "lat": 37.7505,
+    "lng": -122.431
+  },
+  {
+    "num": 184,
+    "area": "Bulletin Board",
+    "location": "Upper Noe Rec Center",
+    "lat": 37.749,
+    "lng": -122.433
+  },
+  {
+    "num": 185,
+    "area": "Bulletin Board",
+    "location": "Duboce Park Cafe",
+    "lat": 37.7692,
+    "lng": -122.4335
+  },
+  {
+    "num": 186,
+    "area": "Bulletin Board",
+    "location": "Mission Cultural Center",
+    "lat": 37.757,
+    "lng": -122.419
+  },
+  {
+    "num": 187,
+    "area": "Bulletin Board",
+    "location": "Atlas Cafe - 20th",
+    "lat": 37.758,
+    "lng": -122.412
+  },
+  {
+    "num": 188,
+    "area": "Bulletin Board",
+    "location": "Progressive Grounds - Cortland",
+    "lat": 37.7395,
+    "lng": -122.4173
+  },
+  {
+    "num": 189,
+    "area": "Bulletin Board",
+    "location": "Martha & Bros - Church",
+    "lat": 37.7508,
+    "lng": -122.4288
+  },
+  {
+    "num": 190,
+    "area": "Bulletin Board",
+    "location": "Noe Valley Bakery",
+    "lat": 37.7508,
+    "lng": -122.434
+  },
+  {
+    "num": 191,
+    "area": "Bulletin Board",
+    "location": "Good Life Grocery - Cortland",
+    "lat": 37.7395,
+    "lng": -122.415
+  },
+  {
+    "num": 192,
+    "area": "Bulletin Board",
+    "location": "Mission Pie - 25th",
+    "lat": 37.7485,
+    "lng": -122.4194
+  },
+  {
+    "num": 193,
+    "area": "Bulletin Board",
+    "location": "Dolores Park Cafe",
+    "lat": 37.7595,
+    "lng": -122.426
+  },
+  {
+    "num": 194,
+    "area": "Bulletin Board",
+    "location": "Bernie's - 24th St",
+    "lat": 37.7508,
+    "lng": -122.43
+  },
+  {
+    "num": 195,
+    "area": "Bulletin Board",
+    "location": "Castro Farmers Market (board)",
+    "lat": 37.762,
+    "lng": -122.435
+  },
+  {
+    "num": 196,
+    "area": "Bulletin Board",
+    "location": "Noe Valley Farmers Market (board)",
+    "lat": 37.7514,
+    "lng": -122.4319
+  },
+  {
+    "num": 197,
+    "area": "Bulletin Board",
+    "location": "Precita Park (board)",
+    "lat": 37.7475,
+    "lng": -122.4115
+  },
+  {
+    "num": 198,
+    "area": "Bulletin Board",
+    "location": "Laundromat - 18th & Guerrero",
+    "lat": 37.7609,
+    "lng": -122.4237
+  },
+  {
+    "num": 199,
+    "area": "Bulletin Board",
+    "location": "Laundromat - 24th & Church",
+    "lat": 37.7503,
+    "lng": -122.4287
+  },
+  {
+    "num": 200,
+    "area": "Bulletin Board",
+    "location": "Harvest Hills Market - Noe",
+    "lat": 37.75,
+    "lng": -122.433
+  }
 ];
 
-// Initialize map
-const map = L.map('map', {
-  center: [37.760, -122.431],
-  zoom: 14,
-  zoomControl: true
-});
+        const colorMap = {
+            'Castro': '#f39c12',
+            'Noe Valley': '#3498db',
+            'Hayes Valley': '#2ecc71',
+            'Valencia': '#e67e22',
+            'Market St': '#e74c3c',
+            'Bulletin Board': '#9b59b6',
+        };
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap &copy; CARTO',
-  maxZoom: 19
-}).addTo(map);
+        const map = L.map('map').setView([37.762, -122.428], 14);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png', {
+            attribution: '&copy; OpenStreetMap &copy; CartoDB',
+            maxZoom: 19,
+        }).addTo(map);
 
-// Create markers
-const allMarkers = [];
-const markersByArea = {};
+        pins.forEach(pin => {
+            const color = colorMap[pin.area] || '#333';
+            const marker = L.circleMarker([pin.lat, pin.lng], {
+                radius: 6,
+                fillColor: color,
+                color: '#333',
+                weight: 1,
+                fillOpacity: 0.85,
+            }).addTo(map);
 
-flyers.forEach(f => {
-  const cssClass = CSS_CLASS[f.area];
-  const color = COLORS[f.area];
-  const num = parseInt(f.n);
+            marker.bindPopup(
+                '<div class="popup-num">#' + String(pin.num).padStart(3, '0') + '</div>' +
+                '<div class="popup-area">' + pin.area + '</div>' +
+                '<div class="popup-loc">' + pin.location + '</div>'
+            );
+        });
 
-  const icon = L.divIcon({
-    className: 'leaflet-div-icon',
-    html: `<div class="flyer-marker ${cssClass}">${num}</div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
-    popupAnchor: [0, -16]
-  });
-
-  const marker = L.marker([f.lat, f.lng], { icon })
-    .bindPopup(`
-      <div class="popup-flyer">Flyer #${f.n}</div>
-      <div class="popup-area" style="background:${color}">${f.area}</div>
-      <div>${f.loc}</div>
-    `);
-
-  marker._area = f.area;
-  allMarkers.push(marker);
-
-  if (!markersByArea[f.area]) markersByArea[f.area] = [];
-  markersByArea[f.area].push(marker);
-
-  marker.addTo(map);
-});
-
-// Legend
-const legend = L.control({ position: 'bottomleft' });
-legend.onAdd = function() {
-  const div = L.DomUtil.create('div', 'legend');
-  div.innerHTML = '<div style="font-weight:700;margin-bottom:4px;">Neighborhoods</div>' +
-    Object.entries(COLORS).map(([area, color]) =>
-      `<div class="legend-row"><div class="legend-dot" style="background:${color}"></div>${area}</div>`
-    ).join('');
-  return div;
-};
-legend.addTo(map);
-
-// Filter logic
-let activeAreas = new Set(Object.keys(COLORS));
-
-function filterArea(area) {
-  if (area === 'all') {
-    const allActive = activeAreas.size === Object.keys(COLORS).length;
-    if (allActive) {
-      activeAreas.clear();
-    } else {
-      activeAreas = new Set(Object.keys(COLORS));
-    }
-  } else {
-    if (activeAreas.has(area)) {
-      activeAreas.delete(area);
-    } else {
-      activeAreas.add(area);
-    }
-  }
-
-  // Update markers
-  allMarkers.forEach(m => {
-    if (activeAreas.has(m._area)) {
-      if (!map.hasLayer(m)) m.addTo(map);
-    } else {
-      if (map.hasLayer(m)) map.removeLayer(m);
-    }
-  });
-
-  // Update buttons
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    const btnArea = btn.dataset.area;
-    if (btnArea === 'all') {
-      btn.classList.toggle('active', activeAreas.size === Object.keys(COLORS).length);
-    } else {
-      btn.classList.toggle('active', activeAreas.has(btnArea));
-    }
-  });
-}
-</script>
+        if (pins.length > 0) {
+            const bounds = L.latLngBounds(pins.map(p => [p.lat, p.lng]));
+            map.fitBounds(bounds, { padding: [30, 30] });
+        }
+    </script>
 </body>
 </html>
